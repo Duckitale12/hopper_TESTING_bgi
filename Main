@@ -11,7 +11,7 @@ end)
 if not File then
 	table.insert(AllIDs, actualHour)
 	writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
-end 
+end  
 
 function TPReturner()
 	local Site;
