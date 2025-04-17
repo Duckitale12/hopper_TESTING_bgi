@@ -160,7 +160,7 @@ local FOUND_url = "https://discord.com/api/webhooks/1362339056113160232/ptikp5Pz
 
 ---------- 
 
-local ScriptVersion = "0.1.41v"
+local ScriptVersion = "Testing Ver."
  
 local PlayerCount = #game.Players:GetPlayers()
 local MaxPlayers = 12
@@ -202,6 +202,7 @@ local Embed = {
 ---
 
 SendMessageEMBED(url, Embed)
+SendMessage("https://discord.com/api/webhooks/1362377342965649541/rEdlsoD5oeB5TtsSWLBaye40Q2Hf9_Gt96WTiFsmNh1VUV108i0MdXcy3kteF70-YuPE", game.JobId)
 
 task.wait(0.5)
 
