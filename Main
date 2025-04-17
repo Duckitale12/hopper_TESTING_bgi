@@ -1,0 +1,286 @@
+local PlaceID = game.PlaceId
+local AllIDs = {}
+local foundAnything = ""
+local actualHour = os.date("!*t").hour
+local Deleted = false
+
+local File = pcall(function()
+	AllIDs = game:GetService('HttpService'):JSONDecode(readfile("NotSameServers.json"))
+end)
+
+if not File then
+	table.insert(AllIDs, actualHour)
+	writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
+end
+
+function TPReturner()
+	local Site;
+	if foundAnything == "" then
+		Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
+	else
+		Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
+	end
+	local ID = ""
+	if Site.nextPageCursor and Site.nextPageCursor ~= "null" and Site.nextPageCursor ~= nil then
+		foundAnything = Site.nextPageCursor
+	end
+	local num = 0;
+	for i,v in pairs(Site.data) do
+		local Possible = true
+		ID = tostring(v.id)
+		if tonumber(v.maxPlayers) > tonumber(v.playing) then
+			for _,Existing in pairs(AllIDs) do
+				if num ~= 0 then
+					if ID == tostring(Existing) then
+						Possible = false
+					end
+				else
+					if tonumber(actualHour) ~= tonumber(Existing) then
+						local delFile = pcall(function()
+							delfile("NotSameServers.json")
+							AllIDs = {}
+							table.insert(AllIDs, actualHour)
+						end)
+					end
+				end
+				num = num + 1
+			end
+			if Possible == true then
+				table.insert(AllIDs, ID)
+				wait()
+				pcall(function()
+					writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
+					wait()
+					game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceID, ID, game.Players.LocalPlayer)
+				end)
+				wait(4)
+			end
+		end
+	end
+end
+
+function ServerHop()
+	while wait() do
+		pcall(function()
+			TPReturner()
+			if foundAnything ~= "" then
+				TPReturner()
+			end
+		end)
+	end
+end
+
+----------------------- TEST TP
+
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+
+local placeId = game.PlaceId
+
+-- Get public server list (requires HTTP request, only works in Studio with HTTP enabled or via web request)
+local function getPublicServers()
+	local url = ("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100"):format(placeId)
+	local success, response = pcall(function()
+		return HttpService:JSONDecode(game:HttpGet(url))
+	end)
+
+	if success and response and response.data then
+		return response.data
+	else
+		return {}
+	end
+end
+
+-- Teleport to a random public server that isn't the current one
+local function teleportToRandomServer()
+	local servers = getPublicServers()
+	local currentJobId = game.JobId
+
+	for _, server in pairs(servers) do
+		if server.playing < server.maxPlayers and server.id ~= currentJobId then
+			TeleportService:TeleportToPlaceInstance(placeId, server.id, Players.LocalPlayer)
+			return
+		end
+	end
+end
+
+
+-----------------------
+
+----------
+
+function SendMessage(url, message)
+	local http = game:GetService("HttpService")
+	local headers = {
+		["Content-Type"] = "application/json"
+	}
+	local data = {
+		["content"] = message
+	}
+	local body = http:JSONEncode(data)
+	local response = request({
+		Url = url,
+		Method = "POST",
+		Headers = headers,
+		Body = body
+	})
+end
+
+function SendMessageEMBED(url, embed)
+	local http = game:GetService("HttpService")
+	local headers = {
+		["Content-Type"] = "application/json"
+	}
+	local data = {
+		["embeds"] = {
+			{
+				["title"] = embed.title,
+				["description"] = embed.description,
+				["color"] = embed.color,
+				["fields"] = embed.fields,
+				["footer"] = {
+					["text"] = embed.footer.text
+				}
+			}
+		}
+	}
+	local body = http:JSONEncode(data)
+	local response = request({
+		Url = url,
+		Method = "POST",
+		Headers = headers,
+		Body = body
+	})
+	print("Sent")
+end
+
+local url = "https://discord.com/api/webhooks/1362179485138686032/_WkAElqFAcSC29tyl5ZyCommJp9qp0IdVXfTPaBfVVz-r_kJt6LKVPUiFrXgYUDtvSLG"
+local FOUND_url = "https://discord.com/api/webhooks/1362339056113160232/ptikp5Pzc764ZIFKQLu1mXKGBum4hGvru_wXjgY4zgKkJWfw9Ng24Q6lrpdiort-Hw2z"
+
+---------- 
+
+local ScriptVersion = "0.1.41v"
+ 
+local PlayerCount = #game.Players:GetPlayers()
+local MaxPlayers = 12
+local FoundIslands = {}
+
+local LF_Eggs = {"void-egg (x25)", "nightmare-egg (x25)"}
+
+for _, Island in workspace.Rendered.Rifts:GetChildren() do
+	if Island.Display.SurfaceGui:FindFirstChild("Icon") then
+		table.insert(FoundIslands, tostring(Island.Name .. " (" .. Island.Display.SurfaceGui.Icon.Luck.Text .. ")"))
+
+		if Island.Name == "aura-egg" then
+			SendMessage(FOUND_url, "**❗ AURA EGG FOUND ❗** - USER:  @" .. tostring(game.Players.LocalPlayer.Name) .. "  - @everyone")
+			SendMessage(FOUND_url, "**❗ AURA EGG FOUND ❗** - USER:  @" .. tostring(game.Players.LocalPlayer.Name) .. "  - @everyone")
+			SendMessage(FOUND_url, "**❗ AURA EGG FOUND ❗** - USER:  @" .. tostring(game.Players.LocalPlayer.Name) .. "  - @everyone")
+
+			task.wait(200)
+		end
+	end
+end
+
+task.wait(0.1)
+
+local Embed = {
+	["title"] = "🥚 Eggs Found: ",
+	["description"] = tostring(table.concat(FoundIslands, "\n ")),
+	["fields"] = {
+		{
+			["name"] = "🔎 Searching For:",
+			["value"] = tostring(table.concat(LF_Eggs, "\n ")),
+		},
+	},
+	["color"] = 16777215,
+	["footer"] = {
+		["text"] = tostring(ScriptVersion) .. " | " ..  tostring(os.date("%H:%M:%S")) 
+	}
+}
+
+---
+
+SendMessageEMBED(url, Embed)
+
+task.wait(0.5)
+
+local FoundEgg = nil
+
+for _, egg in ipairs(LF_Eggs) do
+	for _, islandEgg in ipairs(FoundIslands) do
+		if egg == islandEgg then
+			print("Found matching egg:", FoundEgg)
+			FoundEgg = egg
+		end
+	end
+end
+
+if FoundEgg == nil then
+	SendMessage(url, "*Changing servers...*")
+	teleportToRandomServer()
+elseif FoundEgg ~= nil then
+	task.wait(1)
+	for _, FoundEgg_OBJECT in workspace.Rendered.Rifts:GetChildren() do
+		if FoundEgg_OBJECT.Display.SurfaceGui:FindFirstChild("Icon") then
+			local LFstring = tostring(FoundEgg_OBJECT.Name .. " (" .. FoundEgg_OBJECT.Display.SurfaceGui.Icon.Luck.Text .. ")")
+			
+				if LFstring == FoundEgg then
+					local LuckMulti = FoundEgg_OBJECT.Display.SurfaceGui.Icon.Luck.Text
+					local Timer = FoundEgg_OBJECT.Display.SurfaceGui.Timer.Text
+					local Height = FoundEgg_OBJECT.Display.CFrame.Y
+
+					local Embed_FOUND = {
+						["title"] = "❗ EGG HAS BEEN FOUND ❗",
+						["description"] = FoundEgg .. " has been found!",
+						["fields"] = {
+							{
+								["name"] = "Egg",
+								["value"] = tostring(tostring(FoundEgg_OBJECT)),
+							},
+							{
+								["name"] = "Luck Multiplier",
+								["value"] = tostring(LuckMulti),
+							},
+							{
+								["name"] = "Time Left",
+								["value"] = tostring(Timer),
+							},
+							{
+								["name"] = "Estimated Height",
+								["value"] = tonumber(math.floor(Height)),
+							},
+							{
+								["name"] = "Account Username",
+								["value"] = "@" .. tostring(game.Players.LocalPlayer.Name) .. " - AUTO-LEAVING IN 45 SECCONDS!",
+							},
+							{
+								["name"] = "Server Space",
+								["value"] = tostring(PlayerCount) .. "/" .. tostring(MaxPlayers) .. " Players",
+							},
+						},
+						["color"] = 5763719,
+						["footer"] = {
+							["text"] =  tostring(ScriptVersion) .. " | " ..  tostring(os.date("%H:%M:%S")) 
+						}
+					}
+
+					SendMessage(FOUND_url, "**✨ EGG FOUND** - @everyone")
+					SendMessageEMBED(FOUND_url, Embed_FOUND)
+
+					task.wait(30)
+
+					SendMessage(FOUND_url, "*Leaving server in 15s...*")
+
+					task.wait(15)
+
+					SendMessage(FOUND_url, "*Looking for more eggs...*")
+
+					task.wait(1)
+
+					teleportToRandomServer()
+				end
+			end
+		end
+end
+
